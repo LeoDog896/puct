@@ -1,8 +1,9 @@
+use std::net::Ipv4Addr;
 use anyhow::Result;
 use clap::Parser;
 use tokio::net::UdpSocket;
 
-/// auto-reconnecting p2p streaming for UDP / UDP + TCP (UTP)
+/// Auto-reconnecting p2p streaming for UDP / UDP + TCP (UTP)
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
@@ -12,15 +13,18 @@ struct Args {
 
 #[derive(clap::Subcommand, Debug)]
 enum Action {
+    /// Prints the current public IP of the runner
     IP,
+    /// Runs puct with the UDP protocol
     Udp {
-        /// Hosting Address
-        #[clap(value_parser)]
-        source_address: String,
 
         /// Destination Address
         #[clap(value_parser)]
         destination_address: String,
+
+        /// Hosting Address. Default to your public IP from `puct ip`.
+        #[clap(value_parser, long, short)]
+        source_address: Option<String>,
     },
 }
 
@@ -42,7 +46,9 @@ async fn main() -> Result<()> {
             source_address,
             destination_address,
         } => {
-            let sock = UdpSocket::bind(source_address).await?;
+            let addr = public_ip::addr_v4().await;
+            let a = source_address.map(|str| str.parse::<Ipv4Addr>()).or_else(|| addr);
+            let sock = UdpSocket::bind(a.or_else(|| addr)).await?;
 
             sock.connect(destination_address).await?;
 

@@ -1,5 +1,9 @@
 # puct
 
+```
+cargo install --git https://github.com/LeoDog896/puct
+```
+
 port ducts. UDP and TCP.
 
 `puct tcp 381.281.301.301` - establishes a UTP (TCP over UDP) connection
