@@ -6,13 +6,13 @@ cargo install --git https://github.com/LeoDog896/puct
 
 port ducts. UDP and TCP.
 
-`puct tcp 381.281.301.301` - establishes a UTP (TCP over UDP) connection
+`puct tcp 381.281.301.301` - establishes a UTP (TCP over UDP) connection -- unimplemented
 
-`puct tcp 692.412.825.504 25565` - establishes a TCP connection with tcp/25565 being the input
+`puct tcp 692.412.825.504 25565` - establishes a TCP connection with tcp/25565 being the input -- unimplemented
 
 You can also specify ports, but 18479 will be the default:
 
-`puct udp 481.351.485.245:5713`
+`puct udp 481.351.485.245:5713` -- unimplemented
 
 The other party needs to use your IP (which you can get using `puct ip`)
 

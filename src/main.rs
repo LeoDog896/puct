@@ -1,7 +1,7 @@
-use std::net::Ipv4Addr;
+use std::net::{SocketAddrV4, Ipv4Addr};
 use anyhow::Result;
 use clap::Parser;
-use tokio::net::UdpSocket;
+use tokio::{io::{self, BufReader, AsyncBufReadExt}, net::UdpSocket};
 
 /// Auto-reconnecting p2p streaming for UDP / UDP + TCP (UTP)
 #[derive(Parser, Debug)]
@@ -46,9 +46,11 @@ async fn main() -> Result<()> {
             source_address,
             destination_address,
         } => {
-            let addr = public_ip::addr_v4().await;
-            let a = source_address.map(|str| str.parse::<Ipv4Addr>()).or_else(|| addr);
-            let sock = UdpSocket::bind(a.or_else(|| addr)).await?;
+            let public_addr = public_ip::addr_v4().await.map(|addr| SocketAddrV4::new(addr, 5713));
+            let parsed_address = source_address.map(|str| {
+                str.parse::<SocketAddrV4>().or_else(|| source_address.parse::<Ipv4Addr>().map(|addr| SocketAddrV4::new(addr, 5713)))
+            }).transpose()?.or_else(|| public_addr).expect("Could not find a public IP address");
+            let sock = UdpSocket::bind(parsed_address).await?;
 
             sock.connect(destination_address).await?;
 
@@ -56,6 +58,14 @@ async fn main() -> Result<()> {
             loop {
                 let len = sock.recv(&mut buf).await?;
                 println!("{:?} bytes received", len);
+
+                tokio::spawn(async move {
+                    let stdin = io::stdin();
+                    let reader = BufReader::new(stdin);
+                    let mut lines = reader.lines();
+
+                    lines.next_line().await
+                });
 
                 let len = sock.send(&buf[..len]).await?;
                 println!("{:?} bytes sent", len);
